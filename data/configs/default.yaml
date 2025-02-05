@@ -1,0 +1,41 @@
+# 基础仿真参数
+simulation:
+  delta_t: 0.1      # 时间步长（秒）
+  delta_T: 1          # 态势融合时间
+  total_time: 100     # 总时间步数
+  seed: 42            # 随机种子
+
+# 目标生成参数
+targets:
+  num_targets: 20                 # 总目标数量
+  type_distribution:              # 目标类型分布比例
+    ballistic: 0.3                # 弹道导弹占30%
+    cruise: 0.5                   # 巡航导弹占50%
+    aircraft: 0.2                 # 战斗机占20%
+  airspace_bounds:                # 空域范围（单位：米）
+    x: [-10000, 10000]            # X轴范围
+    y: [-10000, 10000]            # Y轴范围
+    z:                            # Z轴分层（不同目标类型生成区域）
+      ballistic: [8000, 10000]    # 弹道导弹：高空
+      cruise: [3000, 8000]        # 巡航导弹：中空
+      aircraft: [500, 3000]       # 战斗机：低空
+  velocity_ranges:                # 速度范围（米/秒）
+    ballistic: 
+      vx: [-50, 50]
+      vy: [-50, 50]
+      vz: [-200, -100]            # 俯冲方向
+    cruise:
+      vx: [-200, 200]
+      vy: [-200, 200]
+      vz: [-10, 10]
+    aircraft:
+      vx: [-150, 150]
+      vy: [-150, 150]
+      vz: [-5, 5]
+
+# 雷达生成参数
+radars:
+  num_radars: 5                   # 雷达数量
+  radius_range: [5000, 10000]     # 雷达侦测半径范围（米）
+  channels_range: [5, 10]         # 雷达通道数范围
+  position_z: 0                   # 雷达部署高度（陆基雷达z=0）
