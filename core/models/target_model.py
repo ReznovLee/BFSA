@@ -1,87 +1,99 @@
 import numpy as np
-from typing import Dict, List, Optional
+
+# Mach 转换为 m/s
+MACH_TO_MS = 340.0
 
 class TargetModel:
-    """
-    目标运动模型基类，记录完整轨迹历史，支持按时间区间查询状态。
-    """
-    MACH_TO_MS = 340.0
+    """ 目标模型基类 """
 
-    def __init__(
-        self,
-        initial_state: np.ndarray,
-        dt: float = 0.1,
-        speed_range: Optional[tuple] = None,
-        priority: int = 1
-    ):
-        self.state = initial_state.astype(float)
-        self.dt = dt
+    def __init__(self, target_id, position, velocity_mach, target_type, priority):
+        """
+        初始化目标
+        :param target_id: 目标唯一ID
+        :param position: 目标初始位置 (x, y, z)
+        :param velocity_mach: 目标速度 (Mach)
+        :param target_type: 目标类型 (ballistic_missile, cruise_missile, fighter_jet)
+        :param priority: 目标优先级
+        """
+        self.target_id = target_id
+        self.position = np.array(position, dtype=np.float64)
+        self.velocity_mach = np.array(velocity_mach, dtype=np.float64)
+        self.velocity_ms = self.velocity_mach * MACH_TO_MS  # Mach 转换为 m/s
+        self.target_type = target_type
         self.priority = priority
-        self.speed_range = (
-            (speed_range[0] * self.MACH_TO_MS, speed_range[1] * self.MACH_TO_MS)
-            if speed_range else None
-        )
-        self.trajectory = []  # 记录完整轨迹历史
-        self.trajectory.append({"time": 0.0, "state": self.state.copy()})
 
-    def update(self, current_time: float) -> np.ndarray:
-        """更新目标状态，记录时间戳"""
-        raise NotImplementedError
+    def update_position(self, time_step):
+        """ 更新目标位置，默认匀速直线运动 """
+        self.position += self.velocity_ms * time_step
 
-    def get_states_in_interval(self, start_time: float, end_time: float) -> List[Dict]:
-        """获取指定时间区间内的所有状态"""
-        return [p for p in self.trajectory if start_time <= p['time'] <= end_time]
+    def get_state(self, timestamp):
+        """ 获取目标当前状态 """
+        return [self.target_id, timestamp, *self.position, *self.velocity_mach, self.target_type, self.priority]
 
-    def _clamp_speed(self, velocity: np.ndarray) -> np.ndarray:
-        """限制速度范围"""
-        if self.speed_range is None:
-            return velocity
-        speed = np.linalg.norm(velocity)
-        min_speed, max_speed = self.speed_range
-        if speed < min_speed:
-            return velocity * (min_speed / speed)
-        elif speed > max_speed:
-            return velocity * (max_speed / speed)
-        return velocity
 
 class BallisticMissile(TargetModel):
-    def __init__(self, initial_state: np.ndarray, dt: float = 0.1, g: float = 9.81, speed_range: tuple = (7.5, 8.5)):
-        super().__init__(initial_state, dt, speed_range, priority=1)
-        self.g = g
+    """ 弹道导弹类，受重力影响 """
 
-    def update(self, current_time: float) -> np.ndarray:
-        x, y, z, vx, vy, vz = self.state
-        new_z = z + vz * self.dt + 0.5 * self.g * self.dt**2
-        new_vz = vz + self.g * self.dt
-        self.state = np.array([x + vx*self.dt, y + vy*self.dt, new_z, vx, vy, new_vz])
-        self.state[3:] = self._clamp_speed(self.state[3:])
-        self.trajectory.append({"time": current_time, "state": self.state.copy()})
-        return self.state
+    GRAVITY = np.array([0, 0, -9.81])
+    PRIORITY = 1  # 优先级最高
+
+    def __init__(self, target_id, position, velocity_mach):
+        super().__init__(target_id, position, velocity_mach, "ballistic_missile", self.PRIORITY)
+
+    def update_position(self, time_step):
+        """ 弹道导弹受重力影响 """
+        self.velocity_ms += self.GRAVITY * time_step
+        self.position += self.velocity_ms * time_step
+        self.velocity_mach = self.velocity_ms / MACH_TO_MS  # 转回 Mach
+
 
 class CruiseMissile(TargetModel):
-    def __init__(self, initial_state: np.ndarray, dt: float = 0.1, g: float = 9.81, cruise_stage_steps: int = 70, 
-                 speed_range: tuple = (0.7, 0.9), noise_std: float = 0.1, adjust_coeff: float = 0.2):
-        super().__init__(initial_state, dt, speed_range, priority=2)
-        self.g = g
-        self.cruise_stage_steps = cruise_stage_steps
-        self.total_steps = 0
-        self.noise_std = noise_std
-        self.adjust_coeff = adjust_coeff
+    """ 巡航导弹类，具有爬升、巡航、俯冲阶段 """
 
-    def update(self, current_time: float) -> np.ndarray:
-        self.total_steps += 1
-        # ...（原有逻辑，略）
-        self.trajectory.append({"time": current_time, "state": self.state.copy()})
-        return self.state
+    PRIORITY = 2  # 中等优先级
+    CRUISE_ALTITUDE = 8000  # 预设巡航高度
 
-class FighterAircraft(TargetModel):
-    def __init__(self, initial_state: np.ndarray, dt: float = 0.1, speed_range: tuple = (1.4, 1.6), 
-                 noise_std: float = 0.2, z_min: float = 500):
-        super().__init__(initial_state, dt, speed_range, priority=3)
-        self.noise_std = noise_std
-        self.z_min = z_min
+    def __init__(self, target_id, position, velocity_mach):
+        super().__init__(target_id, position, velocity_mach, "cruise_missile", self.PRIORITY)
+        self.current_phase = "climb"
 
-    def update(self, current_time: float) -> np.ndarray:
-        # ...（原有逻辑，略）
-        self.trajectory.append({"time": current_time, "state": self.state.copy()})
-        return self.state
+    def update_position(self, time_step):
+        """ 巡航导弹运动模型 """
+        if self.current_phase == "climb":
+            if self.position[2] < self.CRUISE_ALTITUDE:
+                self.position[2] += 50 * time_step
+            else:
+                self.current_phase = "cruise"
+
+        elif self.current_phase == "cruise":
+            disturbance = np.random.normal(0, 1, 3)
+            self.velocity_ms += disturbance * 0.1
+            if np.random.rand() < 0.05:
+                self.current_phase = "dive"
+
+        elif self.current_phase == "dive":
+            self.position[2] -= 100 * time_step
+
+        self.position += self.velocity_ms * time_step
+        self.velocity_mach = self.velocity_ms / MACH_TO_MS
+
+
+class FighterJet(TargetModel):
+    """ 战斗机类，高机动性 """
+
+    PRIORITY = 3  # 优先级最低
+    MIN_ALTITUDE = 500  # 预设最低飞行高度
+
+    def __init__(self, target_id, position, velocity_mach):
+        super().__init__(target_id, position, velocity_mach, "fighter_jet", self.PRIORITY)
+
+    def update_position(self, time_step):
+        """ 战斗机运动模型，模拟机动性 """
+        disturbance = np.random.normal(0, 5, 3)
+        self.velocity_ms += disturbance
+
+        if self.position[2] + self.velocity_ms[2] * time_step < self.MIN_ALTITUDE:
+            self.velocity_ms[2] = abs(self.velocity_ms[2])
+
+        self.position += self.velocity_ms * time_step
+        self.velocity_mach = self.velocity_ms / MACH_TO_MS
