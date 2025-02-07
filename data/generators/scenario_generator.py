@@ -7,7 +7,6 @@ from datetime import datetime
 from core.models.radar_network import Radar
 from core.models.target_model import BallisticMissile, CruiseMissile, FighterJet
 
-
 # 读取 default.yaml 获取配置
 def load_config(filename):
     """ 从 ../configs/ 目录加载 default.yaml """
@@ -16,35 +15,32 @@ def load_config(filename):
         config = yaml.safe_load(file)
     return config
 
-
-# 生成随机雷达数据（固定 z = 0）
+# 生成随机雷达数据
 def generate_random_radars(num_radars):
-    """ 生成随机雷达信息（z 坐标固定为 0） """
+    """ 生成随机雷达信息 """
     radars = []
     for i in range(num_radars):
-        position = [random.uniform(0, 10000), random.uniform(0, 10000), 0]  # z 坐标固定为 0
+        position = [random.uniform(0, 10000) for _ in range(3)]  # 随机坐标
         detection_range = random.uniform(5000, 15000)  # 随机探测范围
         num_channels = random.randint(2, 6)  # 随机通道数
 
         radar = Radar(i, position, num_channels, detection_range)
         radars.append(radar)
-
+    
     return radars
-
 
 # 将雷达信息存入 CSV
 def save_radars_to_csv(radars, folder, radar_filename):
     """ 存储雷达数据到 CSV """
     os.makedirs(folder, exist_ok=True)
     radar_file_path = os.path.join(folder, radar_filename)
-
+    
     with open(radar_file_path, 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(["id", "x", "y", "z", "radius", "number_channel"])
-
+        
         for radar in radars:
             writer.writerow([radar.radar_id, *radar.position, radar.detection_range, radar.num_channels])
-
 
 # 计算目标数量
 def compute_target_counts(num_targets, target_ratio):
@@ -57,7 +53,6 @@ def compute_target_counts(num_targets, target_ratio):
         "cruise_missile": cruise_count,
         "fighter_jet": fighter_count
     }
-
 
 # 生成随机目标数据
 def generate_random_targets(target_counts):
@@ -80,9 +75,8 @@ def generate_random_targets(target_counts):
 
             targets.append(target)
             target_id += 1  # 目标 ID 递增
-
+            
     return targets
-
 
 # 生成目标轨迹并存入 CSV
 def save_targets_to_csv(targets, folder, targets_filename, total_time=100, time_step=0.1):
@@ -98,7 +92,6 @@ def save_targets_to_csv(targets, folder, targets_filename, total_time=100, time_
             for t in np.arange(0, total_time, time_step):
                 target.update_position(time_step)
                 writer.writerow(target.get_state(t))
-
 
 # 主程序：根据 default.yaml 生成场景
 def generate_scenario():
@@ -126,7 +119,6 @@ def generate_scenario():
     targets = generate_random_targets(target_counts)
     targets_filename = config["output"]["target_filename_template"].format(num_targets=num_targets)
     save_targets_to_csv(targets, output_folder, targets_filename)
-
 
 if __name__ == "__main__":
     generate_scenario()
