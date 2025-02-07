@@ -1,14 +1,14 @@
 {
-	"python.autoComplete.extraPaths": [
-		"./core/algorithms",
-		"./core/models",
-		"./core/utils",
-		"./core/visualizations"
-	],
-	"python.analysis.extraPaths": [
-		"./core/algorithms",
-		"./core/models",
-		"./core/utils",
-		"./core/visualizations"
-	]
+    "python.autoComplete.extraPaths": [
+        "./core/algorithms",
+        "./core/models",
+        "./core/utils",
+        "./core/visualizations"
+    ],
+    "python.analysis.extraPaths": [
+        "./core/algorithms",
+        "./core/models",
+        "./core/utils",
+        "./core/visualizations"
+    ]
 }

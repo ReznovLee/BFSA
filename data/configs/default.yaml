@@ -6,7 +6,7 @@ num_radars: 5
 # 目标数量
 num_targets: 10
 
-# 目标类型比例
+# 目标类型比例（百分比，总和应为1.0）
 target_ratio:
   ballistic_missile: 0.4  # 40% 弹道导弹
   cruise_missile: 0.3     # 30% 巡航导弹
@@ -15,7 +15,7 @@ target_ratio:
 # 仿真时间参数
 simulation:
   total_time: 100   # 总仿真时间（秒）
-  time_step: 1      # 每个时间步长（秒）
+  time_step: 0.1    # 每个时间步长（秒）
 
 # 输出文件夹和文件命名
 output:
