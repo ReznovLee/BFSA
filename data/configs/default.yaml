@@ -16,9 +16,11 @@ target_ratio:
 simulation:
   total_time: 100   # 总仿真时间（秒）
   time_step: 0.1    # 每个时间步长（秒）
+  algorithm_step: 1.0  # 每次态势融合时间（秒）
 
 # 输出文件夹和文件命名
 output:
   base_folder: "scenario"  # 输出文件夹基础名称
   radar_filename_template: "{num_radars}-radar.csv"  # 雷达 CSV 文件名
   target_filename_template: "{num_targets}-targets.csv"  # 目标 CSV 文件名
+  result_folder_template: "{num_radar}R{num_target}T-result %Y-%m-%d %H:%M:%S"  # 结果文件夹格式
