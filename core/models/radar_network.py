@@ -1,4 +1,6 @@
+from typing import Dict
 import numpy as np
+
 
 class Radar:
     """ 单部雷达类 """
@@ -14,7 +16,7 @@ class Radar:
         self.radar_id = radar_id
         self.position = np.array(position, dtype=np.float64)
         self.num_channels = num_channels
-        self.detection_range = detection_range
+        self.detection_range = detection_range  #
         self.channels = {i: None for i in range(num_channels)}  # 通道状态
 
     def is_available(self):
@@ -46,12 +48,12 @@ class Radar:
 class RadarNetwork:
     """ 雷达网络类 """
 
-    def __init__(self, radars):
+    def __init__(self, radars: Dict[int, Radar]):
         """
         初始化雷达网络
-        :param radars: 雷达对象列表
+        :param radars: 雷达字典 {radar_id: Radar对象}
         """
-        self.radars = {radar.radar_id: radar for radar in radars}
+        self.radars = radars
 
     def find_covering_radars(self, target_position):
         """
@@ -78,3 +80,7 @@ class RadarNetwork:
         """ 释放指定雷达的通道 """
         if radar_id in self.radars:
             self.radars[radar_id].release_channel(channel_id)
+
+    def is_radar_available(self, radar_id: int) -> bool:
+        """ 检查指定雷达是否有空闲通道 """
+        return radar_id in self.radars and self.radars[radar_id].is_available()

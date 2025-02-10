@@ -3,6 +3,7 @@ from scipy.sparse import csr_matrix
 from typing import List, Dict, Union
 from core.models.radar_network import RadarNetwork
 
+
 class TrackingMetrics:
     """
     跟踪性能评价体系，包含多个核心指标计算：
@@ -14,22 +15,28 @@ class TrackingMetrics:
     """
 
     @staticmethod
-    def weighted_total_tracking_time(
-        assignment: csr_matrix,
-        targets: List[Dict],
-        time_step: float = 1.0
-    ) -> float:
+    def weighted_total_tracking_time(assignment: csr_matrix, targets: List[Dict], time_step: float = 1.0) -> float:
         """
         计算加权总跟踪时间。
         """
+        if assignment is None or assignment.shape[0] == 0:
+            return 0  # ✅ 防止 None 访问 sum()
+
         tracked = assignment.sum(axis=1).A1  # 获取目标的跟踪次数（转换为 1D 数组）
-        priorities = np.array([t["priority"] for t in targets])
-        return np.dot(tracked, priorities) * time_step  # 计算加权总跟踪时间
+        priorities = np.array([t["priority"] for t in targets])  # 获取所有目标的优先级
+
+        if tracked.shape[0] != priorities.shape[0]:  # ✅ 检查维度匹配
+            full_priorities = np.zeros(assignment.shape[0])
+            tracked_indices = np.unique(assignment.nonzero()[0])  # 被跟踪目标索引
+            full_priorities[tracked_indices] = priorities[tracked_indices]
+            return np.dot(tracked, full_priorities) * time_step  # ✅ 确保对齐
+
+        return np.dot(tracked, priorities) * time_step
 
     @staticmethod
     def radar_resource_utilization(
-        assignment: csr_matrix,
-        radar_network: RadarNetwork
+            assignment: csr_matrix,
+            radar_network: RadarNetwork
     ) -> Dict[int, float]:
         """
         计算各雷达通道利用率（通道使用数 / 总通道数）。
@@ -47,8 +54,8 @@ class TrackingMetrics:
 
     @staticmethod
     def coverage_ratio(
-        assignment: csr_matrix,
-        num_targets: int
+            assignment: csr_matrix,
+            num_targets: int
     ) -> float:
         """
         计算目标覆盖比例（被跟踪过的目标数 / 总目标数）。
@@ -57,54 +64,61 @@ class TrackingMetrics:
         return tracked_targets / num_targets
 
     @staticmethod
-    def tracking_switches(
-        assignment: csr_matrix,
-        targets: List[Dict]
-    ) -> Dict[int, int]:
+    def tracking_switches(assignment: csr_matrix, targets: List[Dict]) -> Dict[int, int]:
         """
-        计算每个目标的雷达切换次数。
+        计算每个目标的雷达切换次数
+        :return: 字典 {目标ID: 切换次数}
         """
         switches = {}
-        for i, target in enumerate(targets):
+        num_targets = min(assignment.shape[0], len(targets))  # ✅ 取较小值，防止索引越界
+
+        for i in range(num_targets):
+            if i >= assignment.shape[0]:  # ✅ 防止索引超出矩阵范围
+                continue
+
             row = assignment.getrow(i).toarray().ravel()
             radar_ids = np.where(row == 1)[0]
 
-            if radar_ids.size > 1:
+            if radar_ids.size > 1:  # ✅ 确保至少有两个时间步的跟踪数据
                 switch_count = np.sum(radar_ids[:-1] != radar_ids[1:])
             else:
-                switch_count = 0
+                switch_count = 0  # ✅ 目标未被跟踪或仅被一个雷达跟踪
 
-            switches[target['id']] = switch_count
+            switches[targets[i]["id"]] = switch_count
 
         return switches
 
     @staticmethod
     def average_tracking_delay(
-        assignment: csr_matrix,
-        target_entries: List[int]
+            assignment: csr_matrix,
+            target_entries: List[int]
     ) -> float:
         """
         计算平均跟踪延迟（目标进入范围后到首次被跟踪的时间步数）。
         """
         delays = []
-        for i, entry_step in enumerate(target_entries):
-            allocations = assignment.getrow(i).nonzero()[1]
+        num_targets = min(assignment.shape[0], len(target_entries))  # ✅ 取较小值，防止索引越界
 
+        for i in range(num_targets):
+            if i >= assignment.shape[0]:  # ✅ 防止索引超出矩阵范围
+                continue
+
+            allocations = assignment.getrow(i).nonzero()[1]
             if allocations.size == 0:
-                continue  # 忽略未被跟踪的目标
+                continue  # ✅ 忽略未被跟踪的目标
 
             first_alloc_step = allocations.min()
-            delays.append(first_alloc_step - entry_step)
+            delays.append(first_alloc_step - target_entries[i])
 
         return float(np.mean(delays)) if delays else 0.0
 
     @staticmethod
     def generate_report(
-        assignment: csr_matrix,
-        radar_network: RadarNetwork,
-        targets: List[Dict],
-        time_step: float = 1.0,
-        target_entries: List[int] = None
+            assignment: csr_matrix,
+            radar_network: RadarNetwork,
+            targets: List[Dict],
+            time_step: float = 1.0,
+            target_entries: List[int] = None
     ) -> Dict[str, Union[float, Dict]]:
         """
         生成综合性能报告。
@@ -114,10 +128,11 @@ class TrackingMetrics:
 
         return {
             "weighted_total_time": float(TrackingMetrics.weighted_total_tracking_time(assignment, targets, time_step)),
-            "resource_utilization": {int(k): float(v) for k, v in TrackingMetrics.radar_resource_utilization(assignment, radar_network).items()},
+            "resource_utilization": {int(k): float(v) for k, v in
+                                     TrackingMetrics.radar_resource_utilization(assignment, radar_network).items()},
             "coverage_ratio": float(TrackingMetrics.coverage_ratio(assignment, len(targets))),
-            "tracking_switches": {int(k): int(v) for k, v in TrackingMetrics.tracking_switches(assignment, targets).items()},
-            "average_delay": float(TrackingMetrics.average_tracking_delay(assignment, target_entries))
+            "tracking_switches": TrackingMetrics.tracking_switches(assignment, targets),
+            "average_delay": TrackingMetrics.average_tracking_delay(assignment, target_entries)
         }
 
 

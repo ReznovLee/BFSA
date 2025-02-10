@@ -27,7 +27,7 @@ class RuleBasedScheduler:
         assignment_rows = []  # 存储目标索引
         assignment_cols = []  # 存储雷达索引
 
-        for i, position in enumerate(target_positions):
+        for i, (target, position) in enumerate(zip(targets, target_positions)):
             # 1. 查找所有覆盖目标的雷达，按距离排序
             covering_radars = self.radar_network.find_covering_radars(position)
             if not covering_radars:
@@ -35,9 +35,9 @@ class RuleBasedScheduler:
 
             # 2. 依次尝试最近的雷达，直到成功分配
             for radar in covering_radars:
-                if radar.allocate_channel():  # 该雷达有可用通道
+                if radar.allocate_channel(target["id"]):  # ✅ 传递目标 ID
                     assignment_rows.append(i)  # 目标索引
-                    assignment_cols.append(radar.id)  # 雷达索引
+                    assignment_cols.append(radar.radar_id)  # 雷达索引
                     assignment_data.append(1)  # 分配值
                     break  # 成功分配后跳出循环
 
