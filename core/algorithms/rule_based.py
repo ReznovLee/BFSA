@@ -2,6 +2,8 @@ import numpy as np
 from scipy.sparse import csr_matrix
 from typing import List, Dict
 from core.models.radar_network import RadarNetwork
+import logging
+
 
 class RuleBasedScheduler:
     """
@@ -23,23 +25,39 @@ class RuleBasedScheduler:
         """
         num_targets = len(targets)
         num_radars = len(self.radar_network.radars)
+
+        # ✅ 防止空数据引起错误
+        if num_targets == 0 or num_radars == 0:
+            return csr_matrix((0, 0), dtype=np.int8)
+
         assignment_data = []  # 存储分配数据
         assignment_rows = []  # 存储目标索引
         assignment_cols = []  # 存储雷达索引
 
         for i, (target, position) in enumerate(zip(targets, target_positions)):
-            # 1. 查找所有覆盖目标的雷达，按距离排序
+            # 1. 查找所有覆盖目标的雷达，并按距离排序
             covering_radars = self.radar_network.find_covering_radars(position)
+
             if not covering_radars:
+                logging.warning(f"目标 {target['id']} 在位置 {position} 未被任何雷达覆盖")
                 continue  # 目标未被任何雷达覆盖，跳过
 
+            covering_radars.sort(key=lambda radar: np.linalg.norm(position - radar.position))  # 按距离排序
+
             # 2. 依次尝试最近的雷达，直到成功分配
+            allocated = False
             for radar in covering_radars:
-                if radar.allocate_channel(target["id"]):  # ✅ 传递目标 ID
+                channel_id = radar.allocate_channel(target["id"])
+                if channel_id is not None:  # 确保成功分配
                     assignment_rows.append(i)  # 目标索引
                     assignment_cols.append(radar.radar_id)  # 雷达索引
                     assignment_data.append(1)  # 分配值
+                    allocated = True
                     break  # 成功分配后跳出循环
+
+            if not allocated:
+                logging.warning(f"目标 {target['id']} 在位置 {position} 无法分配到任何雷达")
 
         # 3. 生成稀疏矩阵
         return csr_matrix((assignment_data, (assignment_rows, assignment_cols)), shape=(num_targets, num_radars), dtype=np.int8)
+
