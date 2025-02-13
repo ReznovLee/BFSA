@@ -140,7 +140,7 @@ def run_experiment():
     rule_based = RuleBasedScheduler(radar_network)
 
     # 5️⃣ 创建结果存储路径
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    timestamp = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
     result_dir = os.path.join("results", f"{num_radars}R{num_targets}T-result {timestamp}")
     os.makedirs(result_dir, exist_ok=True)
 
