@@ -119,32 +119,32 @@ def save_assignment_results(assignments: List[csr_matrix], result_dir: str, algo
 def run_experiment():
     """ 主实验入口，执行 BFSA-RHO 和 Rule-Based 算法并进行可视化 """
 
-    # 1️⃣ 读取配置
+    # 读取配置
     config = load_config("default.yaml")
     Δt = config["simulation"]["time_step"]
     ΔT = config["simulation"]["algorithm_step"]
     num_radars = config["num_radars"]
     num_targets = config["num_targets"]
 
-    # 2️⃣ 获取最新 scenario 目录
+    # 获取最新 scenario 目录
     latest_scenario = get_latest_scenario_folder()
     target_file = os.path.join(latest_scenario, f"{num_targets}-targets.csv")
     radar_file = os.path.join(latest_scenario, f"{num_radars}-radar.csv")
 
-    # 3️⃣ 读取数据
+    # 读取数据
     radar_network = process_radar_data(load_csv(radar_file))
     targets, target_positions = process_target_data(load_csv(target_file), radar_network)
 
-    # 4️⃣ 初始化算法调度器
+    # 初始化算法调度器
     bfsa_rho = BFSARHO(radar_network)
     rule_based = RuleBasedScheduler(radar_network)
 
-    # 5️⃣ 创建结果存储路径
+    # 创建结果存储路径
     timestamp = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
     result_dir = os.path.join("results", f"{num_radars}R{num_targets}T-result {timestamp}")
     os.makedirs(result_dir, exist_ok=True)
 
-    # 6️⃣ 逐步运行算法（每 ΔT 执行一次）
+    # 逐步运行算法（每 ΔT 执行一次）
     bfsa_assignments, rule_assignments = [], []
     time_steps = list(range(0, int(config["simulation"]["total_time"]), int(ΔT)))
 
@@ -161,15 +161,15 @@ def run_experiment():
         print(
             f"Time step {t} BFSA-RHO Assignment: {bfsa_assignment.shape}, Rule-Based Assignment: {rule_assignment.shape}")
 
-    # 7️⃣ 存储调度结果
+    # 存储调度结果
     save_assignment_results(bfsa_assignments, result_dir, "BFSA-RHO")
     save_assignment_results(rule_assignments, result_dir, "Rule-Based")
 
-    # 8️⃣ 计算评估指标
+    # 计算评估指标
     bfsa_report = TrackingMetrics.generate_report(bfsa_assignments[-1], radar_network, targets, ΔT)
     rule_based_report = TrackingMetrics.generate_report(rule_assignments[-1], radar_network, targets, ΔT)
 
-    # 9️⃣ 可视化并保存图像
+    # 可视化并保存图像
     ResultPlotter.plot_weighted_time_comparison(bfsa_report, rule_based_report,
                                                 os.path.join(result_dir, "weighted_time.png"))
     ResultPlotter.plot_radar_utilization_heatmap(bfsa_report, rule_based_report, radar_network,
@@ -178,7 +178,7 @@ def run_experiment():
                                            os.path.join(result_dir, "switch_distribution.png"))
     ResultPlotter.plot_delay_cdf(bfsa_report, rule_based_report, os.path.join(result_dir, "delay_cdf.png"))
 
-    # 10️⃣ 绘制甘特图
+    # 绘制甘特图
     ResultPlotter.plot_gantt_chart(bfsa_assignments, time_steps, mode="target",
                                    save_path=os.path.join(result_dir, "target_gantt_chart.png"))
     ResultPlotter.plot_gantt_chart(bfsa_assignments, time_steps, mode="radar",
