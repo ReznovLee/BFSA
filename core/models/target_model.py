@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+"""
+@Project ：BFSA
+@File    ：target_model.py
+@IDE     ：PyCharm
+@Author  ：ReznovLee
+@Date    ：2025/2/1 9:13
+"""
+
 import numpy as np
 
 # Mach 转换为 m/s（声速）

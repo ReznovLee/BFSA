@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+"""
+@Project ：BFSA
+@File    ：main.py
+@IDE     ：PyCharm
+@Author  ：ReznovLee
+@Date    ：2025/2/1 15:48
+"""
+
 import os
 import csv
 import yaml
@@ -19,7 +29,7 @@ import logging
 def load_config(yaml_file: str) -> Dict:
     """ 从 default.yaml 加载实验配置 """
     config_path = os.path.join("data/configs", yaml_file)
-    with open(config_path, "r") as file:
+    with open(config_path, "rb") as file:
         config = yaml.safe_load(file)
     return config
 

@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+"""
+@Project ：BFSA
+@File    ：scenario_generator.py
+@IDE     ：PyCharm
+@Author  ：ReznovLee
+@Date    ：2025/2/6 10:14
+"""
+
 import os
 import csv
 import yaml
@@ -11,7 +21,7 @@ from core.models.target_model import BallisticMissile, CruiseMissile, FighterJet
 def load_config(filename):
     """ 从 ../configs/ 目录加载 default.yaml """
     config_path = '../configs/' + filename  # 通过相对路径访问
-    with open(config_path, 'r') as file:
+    with open(config_path, 'rb') as file:
         config = yaml.safe_load(file)
     return config
 

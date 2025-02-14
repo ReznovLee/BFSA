@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+"""
+@Project ：BFSA
+@File    ：constraints.py
+@IDE     ：PyCharm
+@Author  ：ReznovLee
+@Date    ：2025/2/1 10:18
+"""
+
 import numpy as np
 from typing import Dict, List, Union
 from scipy.sparse import csr_matrix

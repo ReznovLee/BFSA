@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+"""
+@Project ：BFSA
+@File    ：kalman_filter.py
+@IDE     ：PyCharm
+@Author  ：ReznovLee
+@Date    ：2025/2/9 12:06
+"""
+
 import numpy as np
 from typing import Optional
 

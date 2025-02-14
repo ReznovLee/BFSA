@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+"""
+@Project ：BFSA
+@File    ：plotter.py
+@IDE     ：PyCharm
+@Author  ：ReznovLee
+@Date    ：2025/2/2 13:08
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 from typing import Dict, List

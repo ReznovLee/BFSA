@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+"""
+@Project ：BFSA
+@File    ：bfsa_rho.py
+@IDE     ：PyCharm
+@Author  ：ReznovLee
+@Date    ：2025/2/5 13:21
+"""
+
 import numpy as np
 from scipy.sparse import csr_matrix
 from typing import List, Dict

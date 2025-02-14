@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+"""
+@Project ：BFSA
+@File    ：radar_network.py
+@IDE     ：PyCharm
+@Author  ：ReznovLee
+@Date    ：2025/2/1 19:43
+"""
+
 from typing import Dict, Optional
 import numpy as np
 import logging
