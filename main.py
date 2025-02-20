@@ -56,6 +56,7 @@ def process_radar_data(radar_data: List[Dict[str, str]]) -> RadarNetwork:
         )
     return RadarNetwork(radars)
 
+
 """
 # 解析目标数据
 def process_target_data(target_data: List[Dict[str, str]], radar_network: RadarNetwork) -> tuple[
@@ -72,6 +73,7 @@ def process_target_data(target_data: List[Dict[str, str]], radar_network: RadarN
         target_positions.append(np.array([float(row["x"]), float(row["y"]), float(row["z"])]))
     return targets, target_positions
 """
+
 
 def process_target_data(target_data: List[Dict[str, str]], radar_network: RadarNetwork) -> tuple[
     list[dict[str, Union[int, ndarray]]], list[ndarray]]:
@@ -131,8 +133,8 @@ def run_experiment():
 
     # 读取配置
     config = load_config("default.yaml")
-    Δt = config["simulation"]["time_step"]
-    ΔT = config["simulation"]["algorithm_step"]
+    # delta_t = config["simulation"]["time_step"]
+    delta_T = config["simulation"]["algorithm_step"]
     num_radars = config["num_radars"]
     num_targets = config["num_targets"]
 
@@ -154,9 +156,9 @@ def run_experiment():
     result_dir = os.path.join("results", f"{num_radars}R{num_targets}T-result {timestamp}")
     os.makedirs(result_dir, exist_ok=True)
 
-    # 逐步运行算法（每 ΔT 执行一次）
+    # 逐步运行算法（每 delta_T 执行一次）
     bfsa_assignments, rule_assignments = [], []
-    time_steps = list(range(0, int(config["simulation"]["total_time"]), int(ΔT)))
+    time_steps = list(range(0, int(config["simulation"]["total_time"]), int(delta_T)))
 
     for t in time_steps:
         # 运行 BFSA-RHO 和 Rule-Based
@@ -176,8 +178,8 @@ def run_experiment():
     save_assignment_results(rule_assignments, result_dir, "Rule-Based")
 
     # 计算评估指标
-    bfsa_report = TrackingMetrics.generate_report(bfsa_assignments[-1], radar_network, targets, ΔT)
-    rule_based_report = TrackingMetrics.generate_report(rule_assignments[-1], radar_network, targets, ΔT)
+    bfsa_report = TrackingMetrics.generate_report(bfsa_assignments[-1], radar_network, targets, delta_T)
+    rule_based_report = TrackingMetrics.generate_report(rule_assignments[-1], radar_network, targets, delta_T)
 
     # 可视化并保存图像
     ResultPlotter.plot_weighted_time_comparison(bfsa_report, rule_based_report,

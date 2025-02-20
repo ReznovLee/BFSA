@@ -14,13 +14,13 @@ import logging
 
 
 class Radar:
-    """ 单部雷达类（支持半球探测范围） """
+    """ 单部雷达类，主要以地面雷达为主，按照文章假设以半球范围进行探测 """
 
     def __init__(self, radar_id: int, position: np.ndarray, num_channels: int, detection_range: float):
         """
         初始化雷达
         :param radar_id: 雷达唯一ID
-        :param position: 雷达位置 (x, y, z)，假设z坐标为雷达高度（地面以上）
+        :param position: 雷达中心位置坐标 (x, y, z)，假设都为路基雷达因此 z 坐标为 0
         :param num_channels: 雷达的通道数
         :param detection_range: 雷达的探测范围 (m)
         """
@@ -47,7 +47,7 @@ class Radar:
         return None  # 无可用通道
 
     def release_channel(self, channel_id: int):
-        """ 释放通道 """
+        """ 目标丢失后释放通道 """
         if self.channels[channel_id] is not None:
             released_target = self.channels[channel_id]
             self.channels[channel_id] = None
@@ -76,7 +76,7 @@ class Radar:
 
 
 class RadarNetwork:
-    """ 雷达网络类 """
+    """ 雷达网络类，包含雷达网络方法与属性 """
 
     def __init__(self, radars: Dict[int, Radar]):
         """
